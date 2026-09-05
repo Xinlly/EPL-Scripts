@@ -1,7 +1,8 @@
 // DumpSelectedObject.cs
-// 输出选中对象的基本信息（类型、ID、属性等）
+// 输出选中对象的基本信息（脚本模式版本，仅用 Base + ApplicationFramework + Gui）
 // 用法：选中图纸上的一个对象 → 右键 → Dump Selected Object
 // 或者：实用工具 → Dump Selected Object
+// 说明：脚本模式无法直接使用 DataModel/HEServices，本脚本通过 selectionset Action 获取信息
 
 public class DumpSelectedObject
 {
@@ -45,84 +46,74 @@ public class DumpSelectedObject
         
         try
         {
-            // 获取选中对象
-            Eplan.EplApi.HEServices.SelectionSet selSet = 
-                new Eplan.EplApi.HEServices.SelectionSet();
+            Eplan.EplApi.ApplicationFramework.CommandLineInterpreter cli = 
+                new Eplan.EplApi.ApplicationFramework.CommandLineInterpreter();
+            Eplan.EplApi.ApplicationFramework.ActionCallingContext acc = 
+                new Eplan.EplApi.ApplicationFramework.ActionCallingContext();
             
-            if (!selSet.IsOnlyOneObjectSelected)
+            // 获取选中的页
+            acc.AddParameter("TYPE", "PAGES");
+            cli.Execute("selectionset", acc);
+            
+            string pages = "";
+            acc.GetParameter("PAGES", ref pages);
+            
+            if (!string.IsNullOrEmpty(pages))
             {
-                result += "状态: 没有选中对象 或 选中了多个对象\n";
-                result += "IsOnlyOneObjectSelected: " + selSet.IsOnlyOneObjectSelected.ToString() + "\n";
-                result += "IsPageSelected: " + selSet.IsPageSelected.ToString() + "\n";
-                ShowResult(result);
-                return;
-            }
-            
-            // 获取第一个选中对象
-            object selObj = selSet.GetSelectedObject();
-            
-            if (selObj == null)
-            {
-                result += "GetSelectedObject() 返回 null\n";
-                ShowResult(result);
-                return;
-            }
-            
-            // 基本信息
-            result += "对象类型: " + selObj.GetType().FullName + "\n";
-            result += "ToString(): " + selObj.ToString() + "\n\n";
-            
-            // 尝试转换为 StorableObject 获取更多信息
-            Eplan.EplApi.DataModel.StorableObject storable = 
-                selObj as Eplan.EplApi.DataModel.StorableObject;
-            
-            if (storable != null)
-            {
-                result += "--- StorableObject 信息 ---\n";
-                result += "ObjectIdentifier: " + storable.ObjectIdentifier.ToString() + "\n";
-                result += "TypeIdentifier: " + storable.TypeIdentifier.ToString() + "\n";
-                result += "DatabaseIdentifier: " + storable.DatabaseIdentifier.ToString() + "\n";
-                result += "IsLocked: " + storable.IsLocked.ToString() + "\n";
-                result += "IsReadOnly: " + storable.IsReadOnly.ToString() + "\n";
-                result += "IsValid: " + storable.IsValid.ToString() + "\n";
-                result += "IsTransient: " + storable.IsTransient.ToString() + "\n";
-                
-                if (storable.Project != null)
+                result += "--- 选中的页 ---\n";
+                string[] pageArr = pages.Split(';');
+                result += "数量: " + pageArr.Length + "\n";
+                foreach (string p in pageArr)
                 {
-                    result += "Project: " + storable.Project.ProjectName + "\n";
-                }
-                
-                result += "\n--- 属性预览（前20个） ---\n";
-                try
-                {
-                    Eplan.EplApi.DataModel.PropertyValueList props = storable.Properties;
-                    if (props != null)
+                    if (!string.IsNullOrEmpty(p))
                     {
-                        int count = 0;
-                        foreach (Eplan.EplApi.DataModel.PropertyValue prop in props)
-                        {
-                            if (count >= 20)
-                            {
-                                result += "  ... (更多属性省略)\n";
-                                break;
-                            }
-                            result += "  " + prop.Id.ToString() + " = " + prop.ToString() + "\n";
-                            count++;
-                        }
-                        if (count == 0)
-                        {
-                            result += "  (属性列表为空)\n";
-                        }
+                        result += "  " + p + "\n";
                     }
                 }
-                catch (System.Exception ex)
-                {
-                    result += "  属性读取失败: " + ex.Message + "\n";
-                }
+                result += "\n";
             }
-            else
+            
+            // 获取选中的对象
+            acc = new Eplan.EplApi.ApplicationFramework.ActionCallingContext();
+            acc.AddParameter("TYPE", "OBJECTS");
+            cli.Execute("selectionset", acc);
+            
+            string objects = "";
+            acc.GetParameter("OBJECTS", ref objects);
+            
+            if (!string.IsNullOrEmpty(objects))
             {
-                result += "(不是 StorableObject 类型，跳过属性读取)\n";
+                result += "--- 选中的对象 ---\n";
+                string[] objArr = objects.Split(';');
+                result += "数量: " + objArr.Length + "\n";
+                foreach (string o in objArr)
+                {
+                    if (!string.IsNullOrEmpty(o))
+                    {
+                        result += "  " + o + "\n";
+                    }
+                }
+                result += "\n";
+            }
+            
+            // 尝试获取更多信息
+            acc = new Eplan.EplApi.ApplicationFramework.ActionCallingContext();
+            acc.AddParameter("TYPE", "SELECTION");
+            cli.Execute("selectionset", acc);
+            
+            string selection = "";
+            acc.GetParameter("SELECTION", ref selection);
+            
+            if (!string.IsNullOrEmpty(selection))
+            {
+                result += "--- SELECTION ---\n";
+                result += selection + "\n\n";
+            }
+            
+            if (string.IsNullOrEmpty(pages) && string.IsNullOrEmpty(objects) && string.IsNullOrEmpty(selection))
+            {
+                result += "(没有选中任何对象，或 selectionset Action 返回空)\n";
+                result += "\n提示：请在图纸上选中一个对象后再运行此脚本\n";
             }
         }
         catch (System.Exception ex)
@@ -132,14 +123,8 @@ public class DumpSelectedObject
             result += ex.StackTrace + "\n";
         }
         
-        ShowResult(result);
-    }
-
-    private void ShowResult(string text)
-    {
-        // 输出到消息框
         System.Windows.Forms.MessageBox.Show(
-            text,
+            result,
             "Dump Selected Object",
             System.Windows.Forms.MessageBoxButtons.OK,
             System.Windows.Forms.MessageBoxIcon.Information);
