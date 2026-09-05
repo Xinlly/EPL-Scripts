@@ -46,24 +46,31 @@ EPL-Scripts/
 | 插件 (Add-in / DLL) | 编译后的 DLL | C# / VB.NET | EPLAN 进程内加载 | ★★★★☆ |
 | 离线程序 (EXE) | 独立 EXE | C# / VB.NET | 独立进程，通过 API 连接 EPLAN | ★★★★★ |
 
-### 脚本可用 API 边界（新手最常踩的坑）
+### 脚本可用 API 边界（官方文档明确）
 
-脚本（不是 Add-in）默认只能引用以下程序集：
-- `System`、`System.XML`、`System.Drawing`、`System.Windows.Forms`
+脚本（Script）不需要 EPLAN API 许可证，以源代码形式（.cs / .vb）存在，运行时动态编译。
+官方文档（Scripts.html）明确，脚本默认只能引用：
+
+**Microsoft .NET 程序集**：
+- `System`
+- `System.XML`
+- `System.Drawing`
+- `System.Windows.Forms`
+
+**EPLAN 程序集（3 个）**：
 - `Eplan.EplApi.Base`
-- `Eplan.EplApi.ApplicationFramework`
-- `Eplan.EplApi.Gui`
+- `Eplan.EplApi.ApplicationFramework`（含 Scripting 命名空间）
+- `Eplan.EplApi.Gui`（含 Scripting 命名空间）
 
-脚本（不是 Add-in）默认只能引用以下程序集：
-- `System`、`System.XML`、`System.Drawing`、`System.Windows.Forms`
-- `Eplan.EplApi.Base`
-- `Eplan.EplApi.ApplicationFramework`
-- `Eplan.EplApi.Gui`
-- `Eplan.EplApi.MasterData`（部件数据库操作）
+**官方原文**：*"There is no way to reference additional assemblies (.Net framework, EPLAN or other providers)!"*
 
-**重要**：`Eplan.EplApi.DataModel` 和 `Eplan.EplApi.HEServices` 在**脚本中不可用**，编译报 CS0234。DataModel 需要 API Extension 许可证，必须通过 Add-in 方式（编译为 DLL 注册）。HEServices 同理。
+额外程序集引用需要 **EPLAN API Extension** 许可证，且必须通过 Add-in（编译为 DLL）方式使用。
 
-操作项目数据的替代方案：
+**已实测验证**：脚本模式下引用 HEServices 报 CS0234，与官方文档一致。
+
+**注意**：网上部分示例（如 Suplanus Parts 章节）引用了 MasterData，但那是在有 API Extension 许可证的前提下，不能作为脚本模式的默认能力。
+
+操作项目数据的替代方案（脚本模式下可用）：
 - 通过内置 Action 间接操作（CommandLineInterpreter.Execute）
 - 通过剪贴板/对话框交互（ReplaceText 模式）
 - 通过插入宏文件（InsertComment 模式）
@@ -77,6 +84,16 @@ EPL-Scripts/
 | 日志路径 | `$(MD_SCRIPTS)\EPL-Scripts\.log\yyyy-MM-dd.log`，用 `PathMap.SubstitutePath("$(MD_SCRIPTS)")` 静态方法获取实际路径 |
 | 右键菜单 | `DialogName="Editor"`, `ContextMenuName="Ged"`（图纸右键菜单），菜单显示格式为 `DialogName.ContextMenuName` |
 | 清单同步 | 每个脚本必须同步登记到金山文档脚本清单 |
+
+### Scripts / Add-ins / Add-ons 三者区别（官方文档定义）
+
+| 类型 | 形式 | 许可证 | 说明 |
+|------|------|--------|------|
+| **Script（脚本）** | 源代码 .cs / .vb | 无需 API 许可 | 动态编译，只能用 3 个 EPLAN 程序集 |
+| **Add-in（插件）** | 编译后的 DLL | 需 API Extension 许可 | 可使用全部 API，包括 DataModel / HEServices |
+| **Add-on（扩展包）** | 打包安装包 | 按需 | 包含主数据、设置、API add-ins、脚本、工具栏的完整扩展包，可自动注册 |
+
+Add-on = 打包分发单位，可以包含脚本和 add-in。
 
 ### 脚本核心特性
 
