@@ -16,13 +16,15 @@ EPLAN Electric P8 2.9 脚本集合（C#）
 ```
 EPL-Scripts/
 ├── src/                    # 脚本源码
-│   ├── Tests/              # 测试脚本（SNC_Test.cs 等）
+│   ├── HelloWorld/         # Hello World 示例
+│   ├── Tests/              # 测试脚本（SNC_Test.cs 等，2024版）
 │   └── Utilities/          # 通用工具脚本
 ├── References/             # 参考资料
-│   ├── api-2.9/            # EPLAN API 2.9 离线文档（24235 个页面，进行中）
+│   ├── api-2.9/            # EPLAN API 2.9 离线文档
 │   ├── 2.9脚本开发避坑指南.md
 │   ├── 英文社区资源汇总.md
 │   └── 中文社区实战经验汇总.md
+├── .log/                   # 脚本运行日志（仅本地）
 ├── AGENT.md                # 本文件
 ├── LICENSE                 # AGPL-3.0
 └── README.md               # 项目说明
@@ -52,7 +54,17 @@ EPL-Scripts/
 - `Eplan.EplApi.ApplicationFramework`
 - `Eplan.EplApi.Gui`
 
-**重要**：`Eplan.EplApi.DataModel` 和 `Eplan.EplApi.MasterData` 等命名空间在**脚本中默认不可用**，需要 API Extension 许可证，必须通过 Add-in 方式（编译为 DLL 注册）。
+**重要**：`Eplan.EplApi.DataModel`、`Eplan.EplApi.MasterData`、`Eplan.EplApi.HEServices` 等命名空间在**脚本中默认不可用**，需要 API Extension 许可证，必须通过 Add-in 方式（编译为 DLL 注册）。实测 2.9 脚本模式下引用 HEServices 或 DataModel 会报 CS0234 编译错误（"命名空间中不存在类型或命名空间名称"）。
+
+### 脚本开发约定
+
+| 约定 | 说明 |
+|------|------|
+| 无 namespace | EPLAN 脚本加载器只扫描全局命名空间的类，类必须写在顶层 |
+| 全名引用 | 不用 `using`，直接写全名如 `Eplan.EplApi.Gui.ContextMenu` |
+| 日志路径 | `$(MD_SCRIPTS)\EPL-Scripts\.log\yyyy-MM-dd.log`，用 `PathMap.SubstitutePath("$(MD_SCRIPTS)")` 获取实际路径 |
+| 右键菜单 | `DialogName="Editor"`, `ContextMenuName="Ged"`（图纸右键菜单），菜单显示格式为 `DialogName.ContextMenuName` |
+| 清单同步 | 每个脚本必须同步登记到金山文档脚本清单 |
 
 ### 脚本核心特性
 
@@ -305,7 +317,12 @@ settings.SetBoolSetting("USER.EnfMVC.ContextMenuSetting.ShowIdentifier", true, 0
 |------|------|------|------|
 | `projects/upstream/EPLAN-Scripting/` | Suplanus 教程 | 81个 | 按章节分类的入门示例，17个主题 |
 | `projects/upstream/Eplan-scripts/` | m1cha1 | 3个 | ClearSearch、ReplaceText、InsertComment |
-| `References/api-2.9/` | 官方文档 | 24235页 | API 2.9 离线文档（下载中） |
+| `References/api-2.9/html/` | 官方文档 | 24235页 | API 2.9 离线 HTML，可浏览器直接打开 |
+| `References/api-2.9/api_2.9.db` | 结构化提取 | 13.6MB | SQLite 数据库，26命名空间 / 917类型 / 39043成员 |
+| `References/api-2.9/api_2.9.json` | 结构化提取 | 10.8MB | JSON 格式 API 数据 |
+| `References/2.9脚本开发避坑指南.md` | 社区汇总 | 20KB | 8大类坑点与技巧 |
+| `References/英文社区资源汇总.md` | 社区汇总 | 24KB | 40+ 英文资源 |
+| `References/中文社区实战经验汇总.md` | 社区汇总 | 25KB | 45+ 中文资源 |
 
 ---
 

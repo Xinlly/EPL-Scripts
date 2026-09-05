@@ -2,13 +2,42 @@
 // 输出选中对象的基本信息（脚本模式版本，仅用 Base + ApplicationFramework + Gui）
 // 用法：选中图纸上的一个对象 → 右键 → Dump Selected Object
 // 或者：实用工具 → Dump Selected Object
+// 日志输出：$(MD_SCRIPTS)\EPL-Scripts\.log\yyyy-mm-dd.log
 // 说明：脚本模式无法直接使用 DataModel/HEServices，本脚本通过 selectionset Action 获取信息
 
 public class DumpSelectedObject
 {
+    // 写日志
+    private void Log(string message)
+    {
+        try
+        {
+            Eplan.EplApi.Base.PathMap oPathMap = new Eplan.EplApi.Base.PathMap();
+            string strLogDir = oPathMap.SubstitutePath("$(MD_SCRIPTS)") + @"\EPL-Scripts\.log";
+            
+            // 确保目录存在
+            if (!System.IO.Directory.Exists(strLogDir))
+            {
+                System.IO.Directory.CreateDirectory(strLogDir);
+            }
+            
+            string strLogFile = strLogDir + @"\" + System.DateTime.Now.ToString("yyyy-MM-dd") + ".log";
+            string strTimestamp = System.DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss");
+            
+            System.IO.File.AppendAllText(strLogFile, "[" + strTimestamp + "] " + message + "\r\n");
+        }
+        catch (System.Exception ex)
+        {
+            // 日志失败不影响主流程
+            System.Diagnostics.Debug.WriteLine("Log failed: " + ex.Message);
+        }
+    }
+
     [DeclareRegister]
     public void OnRegister()
     {
+        Log("DumpSelectedObject: 注册");
+        
         // 注册到图纸右键菜单（DialogName=Editor, ContextMenuName=Ged）
         Eplan.EplApi.Gui.ContextMenuLocation oLoc = 
             new Eplan.EplApi.Gui.ContextMenuLocation();
@@ -43,15 +72,16 @@ public class DumpSelectedObject
     public void Run()
     {
         string result = "=== Dump Selected Object ===\n\n";
+        Log("DumpSelectedObject: 开始执行");
         
         try
         {
             Eplan.EplApi.ApplicationFramework.CommandLineInterpreter cli = 
                 new Eplan.EplApi.ApplicationFramework.CommandLineInterpreter();
-            Eplan.EplApi.ApplicationFramework.ActionCallingContext acc = 
-                new Eplan.EplApi.ApplicationFramework.ActionCallingContext();
             
             // 获取选中的页
+            Eplan.EplApi.ApplicationFramework.ActionCallingContext acc = 
+                new Eplan.EplApi.ApplicationFramework.ActionCallingContext();
             acc.AddParameter("TYPE", "PAGES");
             cli.Execute("selectionset", acc);
             
@@ -71,49 +101,65 @@ public class DumpSelectedObject
                     }
                 }
                 result += "\n";
+                Log("选中的页: " + pages.Replace(';', ','));
             }
             
-            // 获取选中的对象
-            acc = new Eplan.EplApi.ApplicationFramework.ActionCallingContext();
-            acc.AddParameter("TYPE", "OBJECTS");
-            cli.Execute("selectionset", acc);
-            
-            string objects = "";
-            acc.GetParameter("OBJECTS", ref objects);
-            
-            if (!string.IsNullOrEmpty(objects))
+            // 获取选中的对象（尝试多种参数名）
+            string[] typeNames = { "OBJECTS", "ELEMENTS", "PLACEMENTS", "FUNCTIONS" };
+            foreach (string typeName in typeNames)
             {
-                result += "--- 选中的对象 ---\n";
-                string[] objArr = objects.Split(';');
-                result += "数量: " + objArr.Length + "\n";
-                foreach (string o in objArr)
+                try
                 {
-                    if (!string.IsNullOrEmpty(o))
+                    acc = new Eplan.EplApi.ApplicationFramework.ActionCallingContext();
+                    acc.AddParameter("TYPE", typeName);
+                    cli.Execute("selectionset", acc);
+                    
+                    string val = "";
+                    if (acc.GetParameter(typeName, ref val) && !string.IsNullOrEmpty(val))
                     {
-                        result += "  " + o + "\n";
+                        result += "--- 选中的对象 (TYPE=" + typeName + ") ---\n";
+                        string[] objArr = val.Split(';');
+                        result += "数量: " + objArr.Length + "\n";
+                        foreach (string o in objArr)
+                        {
+                            if (!string.IsNullOrEmpty(o))
+                            {
+                                result += "  " + o + "\n";
+                            }
+                        }
+                        result += "\n";
+                        Log("TYPE=" + typeName + ": " + val.Replace(';', ','));
+                        break; // 找到第一个有结果的就停
                     }
                 }
+                catch
+                {
+                    // 这个 TYPE 不支持，试下一个
+                }
+            }
+            
+            // 尝试获取 MD_SCRIPTS 路径验证日志位置
+            try
+            {
+                Eplan.EplApi.Base.PathMap oPathMap = new Eplan.EplApi.Base.PathMap();
+                string strMdScripts = oPathMap.SubstitutePath("$(MD_SCRIPTS)");
+                result += "--- 日志路径 ---\n";
+                result += "$(MD_SCRIPTS) = " + strMdScripts + "\n";
+                result += "日志文件: " + strMdScripts + @"\EPL-Scripts\.log\" + System.DateTime.Now.ToString("yyyy-MM-dd") + ".log" + "\n";
                 result += "\n";
+                Log("MD_SCRIPTS = " + strMdScripts);
+            }
+            catch (System.Exception exPath)
+            {
+                result += "--- 日志路径 (获取失败) ---\n";
+                result += exPath.Message + "\n\n";
             }
             
-            // 尝试获取更多信息
-            acc = new Eplan.EplApi.ApplicationFramework.ActionCallingContext();
-            acc.AddParameter("TYPE", "SELECTION");
-            cli.Execute("selectionset", acc);
-            
-            string selection = "";
-            acc.GetParameter("SELECTION", ref selection);
-            
-            if (!string.IsNullOrEmpty(selection))
+            if (string.IsNullOrEmpty(pages))
             {
-                result += "--- SELECTION ---\n";
-                result += selection + "\n\n";
-            }
-            
-            if (string.IsNullOrEmpty(pages) && string.IsNullOrEmpty(objects) && string.IsNullOrEmpty(selection))
-            {
-                result += "(没有选中任何对象，或 selectionset Action 返回空)\n";
-                result += "\n提示：请在图纸上选中一个对象后再运行此脚本\n";
+                result += "(没有选中任何页，请在页导航器中选中一页)\n";
+                result += "\n提示：如果选中了图形对象但没显示，可能是脚本模式下 selectionset Action 不返回对象列表\n";
+                Log("无选中内容");
             }
         }
         catch (System.Exception ex)
@@ -121,7 +167,10 @@ public class DumpSelectedObject
             result += "\n=== 错误 ===\n";
             result += ex.GetType().Name + ": " + ex.Message + "\n";
             result += ex.StackTrace + "\n";
+            Log("错误: " + ex.GetType().Name + " - " + ex.Message);
         }
+        
+        Log("DumpSelectedObject: 执行完成");
         
         System.Windows.Forms.MessageBox.Show(
             result,
@@ -133,5 +182,6 @@ public class DumpSelectedObject
     [DeclareUnregister]
     public void OnUnregister()
     {
+        Log("DumpSelectedObject: 注销");
     }
 }
