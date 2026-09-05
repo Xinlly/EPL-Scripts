@@ -8,11 +8,11 @@ public class DumpSelectedObject
     [DeclareRegister]
     public void OnRegister()
     {
-        // 注册到图纸右键菜单（Editor.Ged）
+        // 注册到图纸右键菜单（DialogName=Editor, ContextMenuName=Ged）
         Eplan.EplApi.Gui.ContextMenuLocation oLoc = 
             new Eplan.EplApi.Gui.ContextMenuLocation();
-        oLoc.DialogName = "Editor.Ged";
-        oLoc.ContextMenuName = "1000";
+        oLoc.DialogName = "Editor";
+        oLoc.ContextMenuName = "Ged";
 
         Eplan.EplApi.Gui.ContextMenu oMenu = new Eplan.EplApi.Gui.ContextMenu();
         oMenu.AddMenuItem(

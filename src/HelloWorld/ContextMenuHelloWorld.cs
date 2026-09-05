@@ -1,7 +1,7 @@
 // ContextMenuHelloWorld.cs
 // EPLAN Electric P8 2.9 脚本 - 图纸右键菜单 Hello World
 // 加载后，在图纸上选中对象右键，菜单中会出现「Hello World」选项
-// 对话框名：Editor.Ged
+// DialogName = Editor, ContextMenuName = Ged
 
 public class ContextMenuHelloWorld
 {
