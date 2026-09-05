@@ -75,6 +75,17 @@ EPL-Scripts/
 - 通过剪贴板/对话框交互（ReplaceText 模式）
 - 通过插入宏文件（InsertComment 模式）
 
+### EPLAN DLL 与命名空间对应关系
+
+| DLL 文件 | 包含的命名空间 | 脚本可用 | Add-in 可用 |
+|----------|--------------|---------|------------|
+| `Eplan.EplApi.Baseu.dll` | `Eplan.EplApi.Base` | ✓ | ✓ |
+| `Eplan.EplApi.AFu.dll` | `Eplan.EplApi.ApplicationFramework`、`Eplan.EplApi.Scripting` | ✓ | ✓ |
+| `Eplan.EplApi.Guiu.dll` | `Eplan.EplApi.Gui`、`Eplan.EplApi.Scripting` | ✓ | ✓ |
+| `Eplan.EplApi.DataModelu.dll` | `Eplan.EplApi.DataModel`、`DataModel.EObjects`、`DataModel.Graphics`、`DataModel.MasterData`、`DataModel.E3D` | ✗ | ✓ |
+| `Eplan.EplApi.HEServicesu.dll` | `Eplan.EplApi.HEServices`、`CommandLineActions` | ✗ | ✓ |
+| `Eplan.EplApi.EServicesu.dll` | `Eplan.EplApi.EServices` | ✗ | ✓ |
+
 ### 脚本开发约定
 
 | 约定 | 说明 |
@@ -87,13 +98,30 @@ EPL-Scripts/
 
 ### Scripts / Add-ins / Add-ons 三者区别（官方文档定义）
 
-| 类型 | 形式 | 许可证 | 说明 |
-|------|------|--------|------|
-| **Script（脚本）** | 源代码 .cs / .vb | 无需 API 许可 | 动态编译，只能用 3 个 EPLAN 程序集 |
-| **Add-in（插件）** | 编译后的 DLL | 需 API Extension 许可 | 可使用全部 API，包括 DataModel / HEServices |
-| **Add-on（扩展包）** | 打包安装包 | 按需 | 包含主数据、设置、API add-ins、脚本、工具栏的完整扩展包，可自动注册 |
+| 维度 | Script（脚本） | Add-in（插件） | 离线程序（EXE） | Add-on（扩展包） |
+|------|--------------|--------------|----------------|-----------------|
+| **形式** | .cs / .vb 源码 | 编译 DLL `*.EplAddIn.*.dll` | .exe 可执行文件 | 打包安装包 |
+| **许可** | 无需 API 许可 | 需 API Extension | 需 API Extension | 按需 |
+| **可用 API** | Base + AFu + Gui（3个） | 全部 API | 全部 API | （分发载体） |
+| **运行方式** | EPLAN 内动态编译 | EPLAN 进程内加载 DLL | 独立进程，连接 EPLAN | 打包分发 |
+| **命名空间** | 2.9 加载型不支持（2024 支持） | 支持 | 支持 | - |
+| **性能** | 启动慢（动态编译） | 快（预编译） | 中（跨进程） | - |
+| **调试** | 困难（DebugScripts 易崩） | VS Attach 调试 | VS 正常调试 | - |
+| **部署** | 复制文件 | 注册 DLL / Add-on | 独立 EXE + DLL | 一键安装 |
+| **适合** | 小工具、快捷操作 | 核心业务、数据操作 | 外部工具、批量处理 | 企业分发 |
+| **生命周期** | 执行一次 / 加载常驻 | `IEplAddIn` 接口管理 | 独立程序生命周期 | 安装/卸载/升级 |
 
-Add-on = 打包分发单位，可以包含脚本和 add-in。
+**IEplAddIn 接口生命周期**：
+
+| 方法 | 调用时机 |
+|------|---------|
+| `OnRegister` | 注册时，设 `bLoadOnStart=true` 则开机自启 |
+| `OnInit` | EPLAN 初始化时 |
+| `OnInitGui` | GUI 初始化时（在这里注册菜单） |
+| `OnExit` | 退出时 |
+| `OnUnregister` | 卸载时 |
+
+Add-on = 打包分发单位，可以包含主数据、设置、API add-ins、脚本、工具栏。首次启动自动注册，支持从服务器集中更新。
 
 ### 脚本核心特性
 
@@ -112,6 +140,20 @@ Add-on = 打包分发单位，可以包含脚本和 add-in。
 - DLL 路径：`C:\Program Files\EPLAN\Platform\2.9.x\Bin\`
 - 脚本无需 API 许可证即可使用
 - 2.9 是 EPLAN 平台统一 API 架构的重要版本
+
+### 2.9 vs 2024 脚本差异
+
+| 维度 | EPLAN 2.9 | EPLAN 2024 |
+|------|-----------|------------|
+| **.NET 版本** | 4.7.2 | 4.8.1 |
+| **EPLAN 程序集** | Base + AFu + Gui（3个） | Base + AFu + Gui + MasterData + IdentityClient（5+个） |
+| **.NET 程序集** | System / XML / Drawing / WinForms（4个） | + Linq / JSON / HTTP / 压缩 / Xml.Linq（约9个） |
+| **脚本命名空间** | 加载型不支持（需全局命名空间） | 支持 |
+| **Newtonsoft.Json** | ✗ | ✓ |
+| **System.Net.Http** | ✗ | ✓ |
+| **System.Linq** | ✗（需 System.Core 手动？） | ✓ |
+
+**结论**：2024 脚本能力比 2.9 强很多，MasterData、Linq、JSON 都内置了。2.9 脚本能力受限，复杂操作建议直接上 Add-in。
 
 ---
 
@@ -329,13 +371,25 @@ settings.SetBoolSetting("USER.EnfMVC.ContextMenuSetting.ShowIdentifier", true, 0
 
 ### 社区资源
 
+**英文**：
+
 - Suplanus 脚本教程（最系统）：https://eplan-scripting.suplanus.de/v4/en/
 - Suplanus GitHub：https://github.com/Suplanus/
 - EplanWiki 脚本：https://github.com/DanielPa/Eplanwiki.Scripting
-- 电气CAD吧 入门系列：https://www.cad-bbs.cn/eplan-actions/
-- CSDN Leonard_Spark 系列：https://blog.csdn.net/zhshspark/
-- B站 渭未安 二次开发教程：https://www.bilibili.com/video/BV1fPx5eoEta/
 - EPLAN Forum (英文)：https://eplan.proboards.com/board/11/scripts
+
+**中文**：
+
+| 来源 | 作者 | 内容 | 备注 |
+|------|------|------|------|
+| [Eplan API - 阿狸的萝卜](https://www.cnblogs.com/alideluobo/p/17520010.html) | 阿狸的萝卜 | 2.9 Add-in 开发（初始化/菜单/Action） | 3 篇 |
+| [Eplan 入门系列 - AriLee](https://www.cnblogs.com/AriLee/category/384932.html) | AriLee | DataModel 基础概念（2012，老版但核心模型通用） | 12 篇 |
+| [EPLAN API 准备工作 - work_hard](https://www.cnblogs.com/BabyComing/p/13271916.html) | work_hard（BabyComing） | 2.7 Add-in 环境配置 / DLL 对应关系 | 2 篇 |
+| [EPLAN二次开发 - Notion](https://prairie-edam-cf6.notion.site/EPLAN-10c7e427771d80989894fe03a400c43b) | - | 2024 版完整教程 | Notion，中文 |
+| [weianweigan / EPLAN-API-Tutorial](https://github.com/weianweigan/EPLAN-API-Tutorial) | 渭未安 | 2024 入门教程（GitHub） | B 站有配套视频 |
+| 电气CAD吧 入门系列 | - | Action 列表 | https://www.cad-bbs.cn/eplan-actions/ |
+| CSDN Leonard_Spark 系列 | zhshspark | 实战教程 | https://blog.csdn.net/zhshspark/ |
+| B站 渭未安 二次开发教程 | 渭未安 | 视频教程 | https://www.bilibili.com/video/BV1fPx5eoEta/ |
 - Reddit r/EPlan：https://www.reddit.com/r/EPlan/
 
 ---
