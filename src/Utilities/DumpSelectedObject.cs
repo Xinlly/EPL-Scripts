@@ -1,9 +1,9 @@
 // DumpSelectedObject.cs
-// 输出选中对象的基本信息（脚本模式版本，仅用 Base + ApplicationFramework + Gui）
+// 输出选中对象的基本信息（脚本模式版本）
 // 用法：选中图纸上的一个对象 → 右键 → Dump Selected Object
 // 或者：实用工具 → Dump Selected Object
 // 日志输出：$(MD_SCRIPTS)\EPL-Scripts\.log\yyyy-mm-dd.log
-// 说明：脚本模式无法直接使用 DataModel/HEServices，本脚本通过 selectionset Action 获取信息
+// 说明：尝试用 HEServices.SelectionSet 获取选中对象（脚本模式下可能不可用）
 
 public class DumpSelectedObject
 {
@@ -75,6 +75,50 @@ public class DumpSelectedObject
         
         try
         {
+            // 先尝试 HEServices.SelectionSet（脚本模式下可能不可用，失败则降级）
+            try
+            {
+                Eplan.EplApi.HEServices.SelectionSet selSet = new Eplan.EplApi.HEServices.SelectionSet();
+                
+                result += "--- HEServices.SelectionSet ---\n";
+                
+                // 是否只有一个对象被选中
+                result += "IsOnlyOneObjectSelected: " + selSet.IsOnlyOneObjectSelected + "\n";
+                result += "IsPageSelected: " + selSet.IsPageSelected + "\n";
+                
+                // 第一个选中的对象
+                object obj = selSet.GetSelectedObject();
+                if (obj != null)
+                {
+                    result += "GetSelectedObject: " + obj.GetType().FullName + "\n";
+                    result += "ToString: " + obj.ToString() + "\n";
+                }
+                else
+                {
+                    result += "GetSelectedObject: (null)\n";
+                }
+                
+                // 选中的页数
+                int[] pages = selSet.GetSelectedPages();
+                if (pages != null)
+                {
+                    result += "GetSelectedPages: " + pages.Length + " 页\n";
+                    foreach (int p in pages)
+                    {
+                        result += "  " + p + "\n";
+                    }
+                }
+                
+                result += "\n";
+                Log("HEServices.SelectionSet 可用");
+            }
+            catch (System.Exception exHes)
+            {
+                result += "--- HEServices.SelectionSet (不可用) ---\n";
+                result += exHes.GetType().Name + ": " + exHes.Message + "\n\n";
+                Log("HEServices 不可用: " + exHes.Message);
+            }
+            
             Eplan.EplApi.ApplicationFramework.CommandLineInterpreter cli = 
                 new Eplan.EplApi.ApplicationFramework.CommandLineInterpreter();
             
