@@ -62,7 +62,7 @@ EPL-Scripts/
 |------|------|
 | 无 namespace | EPLAN 脚本加载器只扫描全局命名空间的类，类必须写在顶层 |
 | 全名引用 | 不用 `using`，直接写全名如 `Eplan.EplApi.Gui.ContextMenu` |
-| 日志路径 | `$(MD_SCRIPTS)\EPL-Scripts\.log\yyyy-MM-dd.log`，用 `PathMap.SubstitutePath("$(MD_SCRIPTS)")` 获取实际路径 |
+| 日志路径 | `$(MD_SCRIPTS)\EPL-Scripts\.log\yyyy-MM-dd.log`，用 `PathMap.SubstitutePath("$(MD_SCRIPTS)")` 静态方法获取实际路径 |
 | 右键菜单 | `DialogName="Editor"`, `ContextMenuName="Ged"`（图纸右键菜单），菜单显示格式为 `DialogName.ContextMenuName` |
 | 清单同步 | 每个脚本必须同步登记到金山文档脚本清单 |
 

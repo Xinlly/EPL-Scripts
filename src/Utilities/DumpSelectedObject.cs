@@ -12,8 +12,7 @@ public class DumpSelectedObject
     {
         try
         {
-            Eplan.EplApi.Base.PathMap oPathMap = new Eplan.EplApi.Base.PathMap();
-            string strLogDir = oPathMap.SubstitutePath("$(MD_SCRIPTS)") + @"\EPL-Scripts\.log";
+            string strLogDir = Eplan.EplApi.Base.PathMap.SubstitutePath("$(MD_SCRIPTS)") + @"\EPL-Scripts\.log";
             
             // 确保目录存在
             if (!System.IO.Directory.Exists(strLogDir))
@@ -105,7 +104,7 @@ public class DumpSelectedObject
             }
             
             // 获取选中的对象（尝试多种参数名）
-            string[] typeNames = { "OBJECTS", "ELEMENTS", "PLACEMENTS", "FUNCTIONS" };
+            string[] typeNames = { "OBJECTS", "ELEMENTS", "PLACEMENTS", "FUNCTIONS", "SYMBOLS" };
             foreach (string typeName in typeNames)
             {
                 try
@@ -115,7 +114,9 @@ public class DumpSelectedObject
                     cli.Execute("selectionset", acc);
                     
                     string val = "";
-                    if (acc.GetParameter(typeName, ref val) && !string.IsNullOrEmpty(val))
+                    acc.GetParameter(typeName, ref val);
+                    
+                    if (!string.IsNullOrEmpty(val))
                     {
                         result += "--- 选中的对象 (TYPE=" + typeName + ") ---\n";
                         string[] objArr = val.Split(';');
@@ -141,8 +142,7 @@ public class DumpSelectedObject
             // 尝试获取 MD_SCRIPTS 路径验证日志位置
             try
             {
-                Eplan.EplApi.Base.PathMap oPathMap = new Eplan.EplApi.Base.PathMap();
-                string strMdScripts = oPathMap.SubstitutePath("$(MD_SCRIPTS)");
+                string strMdScripts = Eplan.EplApi.Base.PathMap.SubstitutePath("$(MD_SCRIPTS)");
                 result += "--- 日志路径 ---\n";
                 result += "$(MD_SCRIPTS) = " + strMdScripts + "\n";
                 result += "日志文件: " + strMdScripts + @"\EPL-Scripts\.log\" + System.DateTime.Now.ToString("yyyy-MM-dd") + ".log" + "\n";
