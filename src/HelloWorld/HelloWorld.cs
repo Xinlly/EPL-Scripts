@@ -1,4 +1,5 @@
 // HelloWorld.cs
+// 适用 EPLAN 版本：EPLAN Electric P8 2.9
 // EPLAN Electric P8 2.9 脚本 - Hello World
 // 加载脚本时弹出提示，并在「实用工具」菜单添加「Hello World」菜单项
 

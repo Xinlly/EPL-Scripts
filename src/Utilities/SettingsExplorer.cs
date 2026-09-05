@@ -1,4 +1,5 @@
 // SettingsExplorer.cs
+// 适用 EPLAN 版本：EPLAN Electric P8 2.9
 // 设置路径查看器 - 遍历 EPLAN 所有设置路径并输出到日志
 // 用法：实用工具 → 设置路径查看器
 // 日志输出：$(MD_SCRIPTS)\EPL-Scripts\.log\yyyy-MM-dd.log

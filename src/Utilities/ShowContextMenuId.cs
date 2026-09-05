@@ -1,4 +1,5 @@
 // ShowContextMenuId.cs
+// 适用 EPLAN 版本：EPLAN Electric P8 2.9
 // 显示/隐藏右键菜单的ID（对话框名 + 菜单ID）
 // 加载后开启显示，卸载后关闭
 // 用法：加载此脚本 → 在EPLAN中右键任何菜单 → 菜单顶部会显示对话框名和ID

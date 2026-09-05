@@ -1,4 +1,5 @@
 // ContextMenuHelloWorld.cs
+// 适用 EPLAN 版本：EPLAN Electric P8 2.9
 // EPLAN Electric P8 2.9 脚本 - 图纸右键菜单 Hello World
 // 加载后，在图纸上选中对象右键，菜单中会出现「Hello World」选项
 // DialogName = Editor, ContextMenuName = Ged

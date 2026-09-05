@@ -1,4 +1,5 @@
 // ShowAllActions.cs
+// 适用 EPLAN 版本：EPLAN Electric P8 2.9
 // 列出当前会话中已注册的 Action（脚本注册的 + 系统常用）
 // 说明：EPLAN API 没有直接枚举所有 Action 的方法，这里列出：
 //   1. 当前脚本自己注册的 Action

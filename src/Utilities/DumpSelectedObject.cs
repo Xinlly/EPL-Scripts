@@ -1,4 +1,5 @@
 // DumpSelectedObject.cs
+// 适用 EPLAN 版本：EPLAN Electric P8 2.9
 // 输出选中对象的基本信息（脚本模式版本）
 // 用法：选中图纸上的一个对象 → 右键 → Dump Selected Object
 // 或者：实用工具 → Dump Selected Object
