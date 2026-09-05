@@ -54,7 +54,19 @@ EPL-Scripts/
 - `Eplan.EplApi.ApplicationFramework`
 - `Eplan.EplApi.Gui`
 
-**重要**：`Eplan.EplApi.DataModel`、`Eplan.EplApi.MasterData`、`Eplan.EplApi.HEServices` 等命名空间在**脚本中默认不可用**，需要 API Extension 许可证，必须通过 Add-in 方式（编译为 DLL 注册）。实测 2.9 脚本模式下引用 HEServices 或 DataModel 会报 CS0234 编译错误（"命名空间中不存在类型或命名空间名称"）。
+脚本（不是 Add-in）默认只能引用以下程序集：
+- `System`、`System.XML`、`System.Drawing`、`System.Windows.Forms`
+- `Eplan.EplApi.Base`
+- `Eplan.EplApi.ApplicationFramework`
+- `Eplan.EplApi.Gui`
+- `Eplan.EplApi.MasterData`（部件数据库操作）
+
+**重要**：`Eplan.EplApi.DataModel` 和 `Eplan.EplApi.HEServices` 在**脚本中不可用**，编译报 CS0234。DataModel 需要 API Extension 许可证，必须通过 Add-in 方式（编译为 DLL 注册）。HEServices 同理。
+
+操作项目数据的替代方案：
+- 通过内置 Action 间接操作（CommandLineInterpreter.Execute）
+- 通过剪贴板/对话框交互（ReplaceText 模式）
+- 通过插入宏文件（InsertComment 模式）
 
 ### 脚本开发约定
 
