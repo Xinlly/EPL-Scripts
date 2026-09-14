@@ -1,0 +1,6 @@
+{
+  "worktree": {
+    "setup": "if [ -d \"$PASEO_SOURCE_CHECKOUT_PATH/References\" ]; then cp -al \"$PASEO_SOURCE_CHECKOUT_PATH/References\" References 2>/dev/null || cp -r \"$PASEO_SOURCE_CHECKOUT_PATH/References\" References; fi",
+    "teardown": ""
+  }
+}
